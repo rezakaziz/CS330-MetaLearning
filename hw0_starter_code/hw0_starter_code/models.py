@@ -96,6 +96,10 @@ class MultiTaskNet(nn.Module):
         layers.append(nn.Linear(layer_sizes[-1], 1))
         self.layers = nn.Sequential(*layers)
         
+        #Part B : 
+        if not self.embedding_sharing:
+            self.U_reg = ScaledEmbedding(num_embeddings=num_users, embedding_dim=embedding_dim, sparse=sparse)
+            self.Q_reg = ScaledEmbedding(num_embeddings=num_items, embedding_dim=embedding_dim, sparse=sparse)
 
 
         #********************************************************
@@ -125,7 +129,20 @@ class MultiTaskNet(nn.Module):
         #********************************************************
         #******************* YOUR CODE HERE *********************
         #********************************************************
+        U = self.U(user_ids)
+        Q = self.Q(item_ids)
+        B = self.B(item_ids)
+        
+        
+        predictions = U.matmul(Q.t()).diag() + B[:,-1]
 
+        
+        if not self.embedding_sharing:
+            U = self.U_reg(user_ids)
+            Q = self.Q_reg(item_ids)
+            
+        x = torch.cat((U, Q, U * Q), dim=-1)
+        score = torch.squeeze(self.layers(x), dim=-1)
 
         #********************************************************
         #********************************************************
