@@ -80,7 +80,7 @@ class DataGenerator(IterableDataset):
         self.metatest_character_folders = character_folders[num_train + num_val :]
         self.image_caching = cache
         self.stored_images = {}
-
+        
         if batch_type == "train":
             self.folders = self.metatrain_character_folders
         elif batch_type == "val":
@@ -137,22 +137,37 @@ class DataGenerator(IterableDataset):
         ### START CODE HERE ###
 
         # Step 1: Sample N (self.num_classes in our case) different characters folders 
-        
+        characters = random.sample(self.folders,self.num_classes)
+        labels = np.eye(self.num_classes,dtype=np.float32)
         # Step 2: Sample and load K + 1 (self.self.num_samples_per_class in our case) images per character together with their labels preserving the order!
         # Use our get_images function defined above.
         # You should be able to complete this with only one call of get_images(...)!
         # Please closely check the input arguments of get_images to understand how it works.
-
+        
+        support_set =  get_images(characters,labels,num_samples=self.num_samples_per_class-1)
+        query_set = get_images(characters,labels,num_samples=1)
+        random.shuffle(query_set)
+        image_labels_set = support_set + query_set
+        images = []
+        labels_tmp = []
         # Step 3: Iterate over the sampled files and create the image and label batches
-
+        for label,image in image_labels_set:
+            images.append(self.image_file_to_array(image,dim_input=self.dim_input))
+            labels_tmp.append(label)
         # Make sure that we have a fixed order as pictured in the assignment writeup
         # Use our image_file_to_array function defined above.
         
-        # Step 4: Shuffle the order of examples from the query set
+
+        # Step 4: Shuffle the order of examples from the query set (DONE AS STEP 2)
         
 
         # Step 5: return tuple of image batch with shape [K+1, N, 784] and
         #         label batch with shape [K+1, N, N]
+        images = np.asarray(images).reshape((self.num_samples_per_class,self.num_classes,784))
+        labels = np.asarray(labels_tmp).reshape(self.num_samples_per_class,self.num_classes,self.num_classes)
+        
+        return torch.as_tensor(images,device=torch.device("cpu")), torch.as_tensor(labels,device = torch.device("cpu"))
+            
         ### END CODE HERE ###
 
     def __iter__(self):
