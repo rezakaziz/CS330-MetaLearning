@@ -36,14 +36,20 @@ class MANN(nn.Module):
         """
         #############################
         ### START CODE HERE ###
-
+        N = self.num_classes
+        B = input_labels.shape[0]
         # Step 1: Concatenate the full (support & query) set of labels and images
-
+        full_set = torch.cat((input_images,input_labels),dim=-1)
+        
         # Step 2: Zero out the labels from the concatenated corresponding to the query set
-
+        full_set[:,-1,:,-3:] = torch.zeros_like(full_set[:,-1,:,-N:])
+        
+        
         # Step 3: Pass the concatenated set sequentially to the memory-augmented network
-
+        input, _ = self.layer1(torch.reshape(full_set,(B,-1,784+N)))
+        input, _ = self.layer2(input)
         # Step 3: Return the predictions with [B, K+1, N, N] shape
+        return torch.reshape(input, shape=(B, -1,  N, N))
 
         ### END CODE HERE ###
 
@@ -69,9 +75,15 @@ class MANN(nn.Module):
         ### START CODE HERE ###
 
         # Step 1: extract the predictions for the query set
-
+        preds_query = preds[:,-1,:,:]
+        preds_query = preds_query.view(-1,preds_query.size(-1))
         # Step 2: extract the true labels for the query set and reverse the one hot-encoding  
-
+        labels_true = labels[:,-1,:,:]
+        labels_true = torch.argmax(labels_true, dim=-1).squeeze()
+        print(labels_true)
         # Step 3: compute the Cross Entropy Loss for the query set only!
+        loss = F.cross_entropy(preds_query,labels_true)
+
+        
         ### END CODE HERE ###
         return loss

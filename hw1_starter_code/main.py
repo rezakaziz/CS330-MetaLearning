@@ -19,7 +19,7 @@ if use_submission:
 def meta_train_step(images, labels, model, optim, eval=False):
     
     predictions = model(images, labels)
-    print(predictions)
+    
     loss = model.loss_function(predictions, labels)
     if not eval:
         optim.zero_grad()
@@ -112,7 +112,7 @@ def main(config):
         t0 = time.time()
         
         i, l = next(meta_train_loader)
-        print('ok')
+        
         i, l = i.to(device), l.to(device)
         t1 = time.time()
 
